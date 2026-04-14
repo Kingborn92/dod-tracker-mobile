@@ -1,0 +1,401 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #2a1a0a; font-family: Georgia, serif; }
+  .dod-app { min-height: 100vh; padding: 10px; }
+
+  /* HEADER */
+  .dod-header { background: #3d2410; border: 2px solid #8b5e2a; border-radius: 10px; padding: 10px 14px; margin-bottom: 10px; }
+  .dod-title { color: #f0c060; font-size: 20px; font-weight: 500; letter-spacing: 1px; }
+  .dod-subtitle { color: #c8943a; font-size: 12px; margin-bottom: 8px; }
+  .tabs-row { display: flex; gap: 6px; flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; }
+  .char-tab { flex: 0 0 auto; background: #3d2410; border: 1.5px solid #6b4020; border-radius: 8px; padding: 7px 13px; color: #c8943a; font-size: 13px; cursor: pointer; font-family: Georgia, serif; }
+  .char-tab.active { background: #8b5e2a; border-color: #f0c060; color: #f0e8c0; }
+  .btn-add { flex: 0 0 auto; background: #1a4a1a; border: 1.5px solid #3a8a3a; border-radius: 8px; padding: 7px 12px; color: #7acc7a; font-size: 13px; cursor: pointer; font-family: Georgia, serif; }
+  .btn-del { background: #4a1a1a; border: 1.5px solid #8a3a3a; border-radius: 6px; padding: 5px 9px; color: #cc7a7a; font-size: 12px; cursor: pointer; }
+
+  /* CARDS */
+  .section-card { background: #3a2010; border: 1.5px solid #6b4020; border-radius: 10px; padding: 12px; margin-bottom: 8px; }
+  .section-label { color: #f0c060; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px; font-weight: 500; font-family: sans-serif; }
+  .dod-input { background: #1e1008; border: 1.5px solid #6b4020; border-radius: 6px; color: #f0e8c0; padding: 8px 10px; font-size: 15px; width: 100%; font-family: Georgia, serif; }
+  .dod-input:focus { outline: none; border-color: #f0c060; }
+  .dod-input::placeholder { color: #6b5030; }
+
+  /* NOME + XP */
+  .name-row { display: flex; gap: 8px; align-items: flex-end; }
+
+  /* ABILITÃ€ */
+  .abilities-grid { display: grid; grid-template-columns: repeat(9, 1fr); gap: 4px; }
+  .ability-btn { background: #1e1008; border: 1.5px solid #6b4020; border-radius: 6px; padding: 5px 2px; text-align: center; cursor: pointer; transition: all 0.15s; position: relative; }
+  .ability-btn.on { background: #4a3000; border-color: #f0c060; }
+  .ability-icon { font-size: 14px; display: block; margin-bottom: 2px; font-family: "Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji",sans-serif; }
+  .ability-short { font-size: 9px; color: #8b6040; font-family: sans-serif; line-height: 1.1; }
+  .ability-btn.on .ability-short { color: #f0c060; }
+  .ability-tooltip { display: none; position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%); background: #1a0e04; border: 1px solid #8b5e2a; border-radius: 6px; padding: 6px 8px; font-size: 11px; color: #f0e8c0; white-space: nowrap; z-index: 10; pointer-events: none; font-family: sans-serif; min-width: 120px; text-align: center; }
+  .ability-btn:active .ability-tooltip, .ability-btn.show-tip .ability-tooltip { display: block; }
+
+  /* STAT con modificatore */
+  .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  @media (min-width: 500px) { .stats-grid { grid-template-columns: repeat(6, 1fr); } }
+  .stat-box { background: #1e1008; border: 1.5px solid #6b4020; border-radius: 8px; padding: 6px 4px; text-align: center; }
+  .stat-label { font-size: 11px; font-weight: 500; letter-spacing: 1px; margin-bottom: 3px; font-family: sans-serif; }
+  .stat-label.str { color: #e06030; }
+  .stat-label.con { color: #e08030; }
+  .stat-label.agi { color: #50a0e0; }
+  .stat-label.per { color: #c0b040; }
+  .stat-label.wis { color: #50c090; }
+  .stat-label.psi { color: #9060d0; }
+  .stat-base { background: transparent; border: none; border-bottom: 1.5px solid #6b4020; color: #f0e8c0; font-size: 22px; font-weight: 500; width: 100%; text-align: center; padding: 2px 0; font-family: Georgia, serif; }
+  .stat-base:focus { outline: none; border-bottom-color: #f0c060; }
+  .stat-mod-row { display: flex; align-items: center; justify-content: center; gap: 3px; margin-top: 4px; }
+  .stat-mod-btn { width: 18px; height: 18px; border-radius: 50%; border: 1px solid #6b4020; background: transparent; color: #8b6040; font-size: 13px; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; font-family: sans-serif; }
+  .stat-mod-btn:active { background: #3a2010; }
+  .stat-mod-val { font-size: 11px; color: #c8943a; min-width: 20px; text-align: center; font-family: sans-serif; }
+  .stat-total { font-size: 10px; color: #6b5030; font-family: sans-serif; margin-top: 1px; }
+
+  /* POOLS */
+  .pools-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .pool-box { background: #1e1008; border-radius: 8px; padding: 10px 6px; text-align: center; }
+  .pool-box.hp { border: 1.5px solid #cc3333; }
+  .pool-box.ip { border: 1.5px solid #3366cc; }
+  .pool-box.pp { border: 1.5px solid #7744bb; }
+  .pool-label { font-size: 11px; font-weight: 500; letter-spacing: 1px; margin-bottom: 5px; font-family: sans-serif; }
+  .pool-label.hp { color: #ff6666; }
+  .pool-label.ip { color: #6699ff; }
+  .pool-label.pp { color: #aa77ff; }
+  .pool-controls { display: flex; align-items: center; justify-content: center; gap: 3px; }
+  .pool-controls.readonly { min-height: 36px; }
+  .pool-btn { width: 36px; height: 36px; border-radius: 50%; border: 1.5px solid; background: transparent; font-size: 22px; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: 500; font-family: sans-serif; }
+  .pool-btn.hp { border-color: #cc3333; color: #ff6666; }
+  .pool-btn.ip { border-color: #3366cc; color: #6699ff; }
+  .pool-btn.pp { border-color: #7744bb; color: #aa77ff; }
+  .pool-val { font-size: 30px; font-weight: 500; color: #f0e8c0; min-width: 28px; text-align: center; }
+  .pool-val.dead { color: #ff4444; }
+  .pool-max { font-size: 11px; color: #8b6040; margin-top: 2px; font-family: sans-serif; }
+  .pool-formula { font-size: 9px; color: #5a3a18; margin-top: 2px; font-family: sans-serif; }
+
+  /* DIFENSIVE */
+  .derived-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .derived-box { background: #1e1008; border-radius: 8px; padding: 10px; }
+  .derived-box.psi-r { border: 1.5px solid #7744bb; }
+  .derived-box.dodge { border: 1.5px solid #3366cc; }
+  .derived-title { font-size: 12px; font-weight: 500; margin-bottom: 6px; font-family: sans-serif; }
+  .derived-title.psi-r { color: #aa77ff; }
+  .derived-title.dodge { color: #6699ff; }
+  .derived-formula { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+  .derived-stat { font-size: 11px; padding: 2px 6px; border-radius: 4px; font-weight: 500; font-family: sans-serif; }
+  .derived-stat.per { background: #2a2800; color: #c0b040; border: 1px solid #504800; }
+  .derived-stat.wis { background: #00281a; color: #50c090; border: 1px solid #005030; }
+  .derived-stat.con { background: #2a1800; color: #e08030; border: 1px solid #503000; }
+  .derived-stat.agi { background: #001828; color: #50a0e0; border: 1px solid #003050; }
+  .derived-op { color: #8b6040; font-size: 11px; font-family: sans-serif; }
+  .derived-result { font-size: 18px; font-weight: 500; color: #f0e8c0; font-family: sans-serif; }
+  .derived-dice { font-size: 10px; color: #8b6040; margin-top: 3px; font-family: sans-serif; }
+
+  /* NOTE */
+  .notes-area { background: #1e1008; border: 1.5px solid #6b4020; border-radius: 6px; color: #f0e8c0; padding: 8px 10px; font-size: 14px; width: 100%; min-height: 80px; resize: vertical; font-family: Georgia, serif; }
+  .notes-area:focus { outline: none; border-color: #f0c060; }
+  </style>
+</head>
+<body>
+<div class="dod-app" id="app">
+  <div class="dod-header">
+    <div class="dod-title">Dungeons of Doria</div>
+    <div class="dod-subtitle">character tracker</div>
+    <div class="tabs-row" id="charTabs"></div>
+  </div>
+  <div id="charView"></div>
+</div>
+
+<script>
+const ABILITIES = [
+  { id:'atk_melee',  icon:'\u2694\uFE0F', short:'+1D\nFisico',   tip:'+1D ai tiri di Attacco Fisico' },
+  { id:'atk_range',  icon:'\uD83C\uDFF9', short:'+1D\nDistanza', tip:'+1D ai tiri di Attacco a Distanza' },
+  { id:'magic',      icon:'\u2728',       short:'+1D\nMagia',    tip:'+1D ai tiri di Attacco Magico' },
+  { id:'dmg',        icon:'\uD83D\uDCA5', short:'+1\nDanni',     tip:'+1 al danno inflitto (ogni attacco)' },
+  { id:'defense',    icon:'\uD83D\uDEE1\uFE0F', short:'+1D\nDifesa',   tip:'+1D alla Difesa fisica e magica' },
+  { id:'regen',      icon:'\uD83D\uDC9A', short:'Regen\n1HP+PP', tip:'Rigenera 1 HP e 1 PP ogni turno' },
+  { id:'init',       icon:'\u26A1',       short:'+1D\nIniziat.', tip:'+1D al tiro di Iniziativa' },
+  { id:'repair',     icon:'\uD83D\uDD27', short:'-3 AP\nRipar.', tip:'Costa -3 AP usare abilita di Riparazione' },
+  { id:'range',      icon:'\uD83C\uDFAF', short:'Range\nx2',     tip:'Raddoppia la gittata degli attacchi a distanza' },
+];
+
+function defaultChar(name) {
+  return {
+    name: name||'', xp: 0,
+    str:0, con:0, agi:0, per:0, wis:0, psi:0,
+    strMod:0, conMod:0, agiMod:0, perMod:0, wisMod:0, psiMod:0,
+    hp:0, ip:0, pp:0,
+    hpTrack: {},
+    abilities: {},
+    notes: ''
+  };
+}
+
+function statTotal(c, s) {
+  return (c[s]||0) + (c[s+'Mod']||0);
+}
+
+function calcMax(c) {
+  const hpMax = Math.floor((statTotal(c,'str') + statTotal(c,'con')) / 2);
+  const ipMax = Math.floor((statTotal(c,'agi') + statTotal(c,'per')) / 2);
+  const ppMax = statTotal(c,'wis') + statTotal(c,'psi');
+  return { hpMax, ipMax, ppMax };
+}
+
+function formatPool(val) {
+  return (val||0) <= 0 && (val||0) <= -20 ? 'MORTO' : (val||0);
+}
+
+let state = { chars: [], active: 0 };
+
+function load() {
+  try {
+    const s = localStorage.getItem('dod_tracker_v3');
+    if (s) state = JSON.parse(s);
+    if (!state.chars || !state.chars.length) { state.chars = [defaultChar('Eroe 1')]; state.active = 0; }
+    state.chars.forEach(c => {
+      if (!c.hpTrack) c.hpTrack = {};
+      if (!c.abilities) c.abilities = {};
+      ['str','con','agi','per','wis','psi'].forEach(s => { if (c[s+'Mod'] === undefined) c[s+'Mod'] = 0; });
+    });
+  } catch(e) { state = { chars: [defaultChar('Eroe 1')], active: 0 }; }
+}
+
+function save() {
+  try { localStorage.setItem('dod_tracker_v3', JSON.stringify(state)); } catch(e) {}
+}
+
+function addChar() {
+  state.chars.push(defaultChar('Eroe ' + (state.chars.length + 1)));
+  state.active = state.chars.length - 1;
+  save(); render();
+}
+
+function delChar(i) {
+  if (state.chars.length <= 1) return;
+  state.chars.splice(i, 1);
+  state.active = Math.min(state.active, state.chars.length - 1);
+  save(); render();
+}
+
+function setActive(i) { state.active = i; render(); }
+
+function setField(field, val) {
+  const c = state.chars[state.active];
+  if (['str','con','agi','per','wis','psi','xp'].includes(field)) {
+    c[field] = parseInt(val) || 0;
+  } else { c[field] = val; }
+  const m = calcMax(c);
+  c.hp = Math.min(c.hp||0, m.hpMax);
+  c.ip = m.ipMax;
+  c.pp = Math.min(c.pp||0, m.ppMax);
+  save(); updatePools(); updateDerived();
+}
+
+function adjMod(stat, delta) {
+  const c = state.chars[state.active];
+  c[stat+'Mod'] = (c[stat+'Mod']||0) + delta;
+  const m = calcMax(c);
+  c.hp = Math.min(c.hp||0, m.hpMax);
+  c.ip = m.ipMax;
+  c.pp = Math.min(c.pp||0, m.ppMax);
+  save();
+  const modEl = document.getElementById('mod_'+stat);
+  if (modEl) {
+    const mv = c[stat+'Mod'];
+    modEl.textContent = (mv > 0 ? '+' : '') + mv;
+  }
+  const totEl = document.getElementById('tot_'+stat);
+  if (totEl) totEl.textContent = 'tot: ' + statTotal(c, stat);
+  updatePools(); updateDerived();
+}
+
+function adjPool(pool, delta) {
+  const c = state.chars[state.active];
+  const m = calcMax(c);
+  c[pool] = Math.max(-20, Math.min(m[pool+'Max'], (c[pool]||0) + delta));
+  save(); updatePools();
+}
+
+function updatePools() {
+  const c = state.chars[state.active];
+  const m = calcMax(c);
+  c.ip = m.ipMax;
+  ['hp','ip','pp'].forEach(p => {
+    const el = document.getElementById('pool_'+p);
+    const mEl = document.getElementById('poolmax_'+p);
+    if (el) {
+      const val = p === 'ip' ? m.ipMax : (c[p]||0);
+      el.textContent = val <= -20 ? 'MORTO' : val;
+      if (p !== 'ip' && val <= 0) el.classList.add('dead'); else el.classList.remove('dead');
+    }
+    if (mEl) mEl.textContent = m[p+'Max'];
+  });
+}
+
+function updateDerived() {
+  return;
+}
+
+function toggleAbility(id) {
+  const c = state.chars[state.active];
+  c.abilities[id] = !c.abilities[id];
+  save();
+  const el = document.getElementById('abl_'+id);
+  if (el) el.classList.toggle('on', !!c.abilities[id]);
+}
+
+function showTip(id, show) {
+  const el = document.getElementById('abl_'+id);
+  if (el) el.classList.toggle('show-tip', show);
+}
+
+function render() {
+  const tabs = document.getElementById('charTabs');
+  tabs.innerHTML = state.chars.map((c,i) =>
+    `<button class="char-tab${i===state.active?' active':''}" onclick="setActive(${i})">${c.name||'Senza nome'}</button>`
+  ).join('') + `<button class="btn-add" onclick="addChar()">+ nuovo</button>`;
+
+  const c = state.chars[state.active];
+  if (!c) return;
+
+  const m = calcMax(c);
+
+  const ablHTML = ABILITIES.map(a => {
+    const on = c.abilities[a.id] ? ' on' : '';
+    return `<div class="ability-btn${on}" id="abl_${a.id}"
+      onclick="toggleAbility('${a.id}')"
+      ontouchstart="showTip('${a.id}',true)"
+      ontouchend="showTip('${a.id}',false)"
+      onmouseenter="showTip('${a.id}',true)"
+      onmouseleave="showTip('${a.id}',false)">
+      <span class="ability-icon">${a.icon}</span>
+      <span class="ability-short" style="white-space:pre;font-family:sans-serif;font-size:8px;color:${on?'#f0c060':'#8b6040'}">${a.short}</span>
+      <div class="ability-tooltip">${a.tip}</div>
+    </div>`;
+  }).join('');
+
+  const statsHTML = ['str','con','agi','per','wis','psi'].map(s => {
+    const mv = c[s+'Mod']||0;
+    const modStr = (mv > 0 ? '+' : '') + mv;
+    return `<div class="stat-box">
+      <div class="stat-label ${s}">${s.toUpperCase()}</div>
+      <input class="stat-base" type="number" value="${c[s]||0}" oninput="setField('${s}',this.value)">
+      <div class="stat-mod-row">
+        <button class="stat-mod-btn" onclick="adjMod('${s}',-1)">-</button>
+        <span class="stat-mod-val" id="mod_${s}">${modStr}</span>
+        <button class="stat-mod-btn" onclick="adjMod('${s}',1)">+</button>
+      </div>
+      <div class="stat-total" id="tot_${s}">tot: ${statTotal(c,s)}</div>
+    </div>`;
+  }).join('');
+
+  const hpVal = c.hp||0;
+  const ppVal = c.pp||0;
+
+  document.getElementById('charView').innerHTML = `
+    <div class="section-card">
+      <div class="name-row">
+        <div style="flex:1">
+          <div style="color:#8b6040;font-size:10px;margin-bottom:3px;letter-spacing:1px;font-family:sans-serif;">NOME</div>
+          <input class="dod-input" value="${c.name||''}" placeholder="Nome del personaggio"
+            oninput="setField('name',this.value);document.querySelectorAll('.char-tab')[${state.active}].textContent=this.value||'Senza nome'">
+        </div>
+        <div style="width:90px;margin-left:8px;">
+          <div style="color:#8b6040;font-size:10px;margin-bottom:3px;letter-spacing:1px;font-family:sans-serif;">XP &#9733;</div>
+          <input class="dod-input" style="text-align:center" type="number" value="${c.xp||0}" oninput="setField('xp',this.value)">
+        </div>
+        <button class="btn-del" style="margin-left:6px;align-self:flex-end;margin-bottom:0" onclick="delChar(${state.active})">&#10005;</button>
+      </div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-label">Abilità speciali</div>
+      <div class="abilities-grid">${ablHTML}</div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-label">Statistiche <span style="font-size:9px;color:#6b5030;font-family:sans-serif;">(base + mod = Punti Vitali)</span></div>
+      <div class="stats-grid">${statsHTML}</div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-label">Punti vitali</div>
+      <div class="pools-grid">
+        <div class="pool-box hp">
+          <div class="pool-label hp">HP</div>
+          <div class="pool-controls">
+            <button class="pool-btn hp" onclick="adjPool('hp',-1)">-</button>
+            <div class="pool-val${hpVal<=0?' dead':''}" id="pool_hp">${hpVal<=0&&hpVal<=-20?'MORTO':hpVal}</div>
+            <button class="pool-btn hp" onclick="adjPool('hp',1)">+</button>
+          </div>
+          <div class="pool-max">max: <span id="poolmax_hp">${m.hpMax}</span></div>
+          <div class="pool-formula">(STR+CON) / 2</div>
+        </div>
+        <div class="pool-box ip">
+          <div class="pool-label ip">IP</div>
+          <div class="pool-controls readonly">
+            <div class="pool-val" id="pool_ip">${m.ipMax}</div>
+          </div>
+          <div class="pool-max">valore: <span id="poolmax_ip">${m.ipMax}</span></div>
+          <div class="pool-formula">(AGI+PER) / 2</div>
+        </div>
+        <div class="pool-box pp">
+          <div class="pool-label pp">PP</div>
+          <div class="pool-controls">
+            <button class="pool-btn pp" onclick="adjPool('pp',-1)">-</button>
+            <div class="pool-val${ppVal<=0?' dead':''}" id="pool_pp">${ppVal<=0&&ppVal<=-20?'MORTO':ppVal}</div>
+            <button class="pool-btn pp" onclick="adjPool('pp',1)">+</button>
+          </div>
+          <div class="pool-max">max: <span id="poolmax_pp">${m.ppMax}</span></div>
+          <div class="pool-formula">WIS + PSI</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-label">Abilità difensive</div>
+      <div class="derived-grid">
+        <div class="derived-box psi-r">
+          <div class="derived-title psi-r">Psi Resistance</div>
+          <div class="derived-formula">
+            <span class="derived-stat per">PER <strong>4</strong></span>
+            <span class="derived-op">+</span>
+            <span class="derived-stat wis">WIS <strong>4</strong></span>
+            <span class="derived-op">=</span>
+            <span class="derived-result">2D</span>
+          </div>
+          <div class="derived-dice">Usa X PP per bonus al tiro (ogni punto di PP dà un bonus di +1 al tiro)</div>
+        </div>
+        <div class="derived-box dodge">
+          <div class="derived-title dodge">Dodge</div>
+          <div class="derived-formula">
+            <span class="derived-stat con">CON <strong>4</strong></span>
+            <span class="derived-op">+</span>
+            <span class="derived-stat agi">AGI <strong>4</strong></span>
+            <span class="derived-op">=</span>
+            <span class="derived-result">2D</span>
+          </div>
+          <div class="derived-dice">Usabile contro qualsiasi attacco fisico mischia e a distanza</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-label">Note</div>
+      <textarea class="notes-area" placeholder="Equipaggiamento, abilità speciali, note libere..."
+        oninput="setField('notes',this.value)">${c.notes||''}</textarea>
+    </div>
+  `;
+}
+
+load(); render();
+</script>
+</body>
+</html>
+
